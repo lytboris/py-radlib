@@ -8,16 +8,9 @@ from socket import *
 from struct import *
 from ctypes import *
 from ctypes import util
+from collections import namedtuple
 
-class AttributeItem():
-    def __init__(self, type, data, datalen, vendor = None):
-        self.type = type
-        self.data = data
-        self.datalen = datalen
-        self.vendor = vendor
-
-    def __repr__(self):
-        return repr((self.type, self.data, self.datalen, self.vendor))
+RadiusAttribute = namedtuple('RadiusAttribute', ['type', 'data', 'datalen', 'vendor'])
 
 # Message types
 RAD_ACCESS_REQUEST	= 1
@@ -254,6 +247,8 @@ radlib.rad_cvt_string.argtypes = [ c_void_p, c_size_t ]
 def rad_cvt_string(data, datalen):
     _data = c_char_p(data)
     retval = radlib.rad_cvt_string(byref(_data), datalen)
+    if bool(retval) == False:
+        return None
     retcopy = string_at(retval)
     libc.free(retval)
     return retcopy
@@ -269,7 +264,7 @@ def rad_get_attr(handle):
         return None
     if retval == RAD_VENDOR_SPECIFIC:
         return rad_get_vendor_attr(string_at(pvalue, len.value), len.value)
-    return AttributeItem(retval, string_at(pvalue, len.value), len.value)
+    return RadiusAttribute(retval, string_at(pvalue, len.value), len.value, None)
 
 def rad_get_attrs(handle):
     attrs = []
@@ -287,7 +282,7 @@ def rad_get_vendor_attr(data, datalen):
     vendor = c_int()
     len = c_size_t(datalen)
     retval = radlib.rad_get_vendor_attr(byref(vendor), byref(pdata), byref(len))
-    return AttributeItem(retval, string_at(pdata, len.value), len.value, vendor.value)
+    return RadiusAttribute(retval, string_at(pdata, len.value), len.value, vendor.value)
 
 radlib.rad_put_addr.argtypes = [ c_void_p, c_int, c_uint ]
 def rad_put_addr(handle, type, value, af = AF_INET):
@@ -358,8 +353,8 @@ def rad_send_response(handle):
 
 radlib.rad_server_open.restype = c_void_p
 radlib.rad_server_open.argtypes = [ c_int ]
-def rad_server(fd):
-    return radlib.rad_server(fd)
+def rad_server_open(fd):
+    return radlib.rad_server_open(fd)
 
 radlib.rad_server_secret.restype = c_char_p
 radlib.rad_server_secret.argtypes = [ c_void_p ]
@@ -370,11 +365,28 @@ radlib.rad_bind_to.argtypes = [ c_void_p, c_uint ]
 def rad_bind_to(handle, addr):
     return radlib.rad_bind_to(handle, inet_aton(addr))
 
-radlib.rad_demangle.restype = c_char_p
+radlib.rad_demangle.restype = POINTER(c_char)
 radlib.rad_demangle.argtypes = [ c_void_p, c_void_p, c_size_t ]
+def rad_demangle(handle, mangled, mlen):
+    _data = c_char_p(mangled)
+    retval = radlib.rad_demangle(handle, byref(_data), mlen)
+    if bool(retval) == False:
+        return None
+    retcopy = string_at(retval)
+    libc.free(retval)
+    return retcopy
 
-radlib.rad_demangle_mppe_key.restype = c_char_p
+radlib.rad_demangle_mppe_key.restype = POINTER(c_char)
 radlib.rad_demangle_mppe_key.argtypes = [ c_void_p, c_void_p, c_size_t, c_void_p ]
+def rad_demangle_mppe_key(handle, mangled, mlen):
+    _data = c_char_p(mangled)
+    len = c_size_t()
+    retval = radlib.rad_demangle(handle, byref(_data), mlen, byref(len))
+    if bool(retval) == False:
+        return None
+    retcopy = string_at(retval)
+    libc.free(retval)
+    return (retcopy, len)
 
 radlib.rad_strerror.restype = c_char_p
 radlib.rad_strerror.argtypes = [ c_void_p ]
