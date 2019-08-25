@@ -4,8 +4,7 @@
 libradius(3) wrapper
 '''
 
-from socket import *
-from struct import *
+import socket
 from ctypes import *
 from ctypes import util
 from collections import namedtuple
@@ -200,7 +199,7 @@ def rad_add_server(handle, hostname, port, secret, timeout, max_tries):
 radlib.rad_add_server_ex.argtypes = [ c_void_p, c_char_p, c_int, c_char_p, c_int, c_int, c_int, c_void_p ]
 def rad_add_server_ex(handle, hostname, port, secret, timeout, max_tries, deadtime, bindto):
     return radlib.rad_add_server_ex(  handle, hostname.encode(), port,
-                                    secret.encode(), timeout, max_tries, deadtime, inet_aton(bindto))
+                                    secret.encode(), timeout, max_tries, deadtime, socket.inet_aton(bindto))
 
 radlib.rad_config.argtypes = [ c_void_p, c_char_p ]
 def rad_config(handle, config_file):
@@ -285,12 +284,12 @@ def rad_get_vendor_attr(data, datalen):
     return RadiusAttribute(retval, string_at(pdata, len.value), len.value, vendor.value)
 
 radlib.rad_put_addr.argtypes = [ c_void_p, c_int, c_uint ]
-def rad_put_addr(handle, type, value, af = AF_INET):
-    packed = inet_pton(af, value)
+def rad_put_addr(handle, type, value, af = socket.AF_INET):
+    packed = socket.inet_pton(af, value)
     return radlib.rad_put_attr(handle, type, packed, len(packed))
 
 def rad_put_addr6(handle, type, value):
-    return rad_put_addr(handle, type, value, AF_INET6)
+    return rad_put_addr(handle, type, value, socket.AF_INET6)
 
 radlib.rad_put_attr.argtypes = [ c_void_p, c_int, c_void_p, c_size_t ]
 def rad_put_attr(handle, type, data, datalen):
@@ -311,7 +310,7 @@ def rad_put_message_authentic(handle):
 
 radlib.rad_put_vendor_addr.argtypes = [ c_void_p, c_int, c_int, c_uint ]
 def rad_put_vendor_addr(handle, vendor, type, value):
-    return radlib.rad_put_vendor_addr(handle, vendor, type, inet_aton(value))
+    return radlib.rad_put_vendor_addr(handle, vendor, type, socket.inet_aton(value))
 
 radlib.rad_put_vendor_attr.argtypes = [ c_void_p, c_int, c_int, c_void_p, c_size_t ]
 def rad_put_vendor_attr(handle, vendor, type, data, datalen):
@@ -363,7 +362,7 @@ def rad_server_secret(handle):
 
 radlib.rad_bind_to.argtypes = [ c_void_p, c_uint ]
 def rad_bind_to(handle, addr):
-    return radlib.rad_bind_to(handle, inet_aton(addr))
+    return radlib.rad_bind_to(handle, socket.inet_aton(addr))
 
 radlib.rad_demangle.restype = POINTER(c_char)
 radlib.rad_demangle.argtypes = [ c_void_p, c_void_p, c_size_t ]
