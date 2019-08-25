@@ -8,172 +8,189 @@ import socket
 from ctypes import *
 from ctypes import util
 from collections import namedtuple
+from enum import IntEnum, unique
 
 RadiusAttribute = namedtuple('RadiusAttribute', ['type', 'data', 'datalen', 'vendor'])
 
-# Message types
-RAD_ACCESS_REQUEST	= 1
-RAD_ACCESS_ACCEPT	= 2
-RAD_ACCESS_REJECT	= 3
-RAD_ACCOUNTING_REQUEST	= 4
-RAD_ACCOUNTING_RESPONSE	= 5
-RAD_ACCESS_CHALLENGE	= 11
-RAD_DISCONNECT_REQUEST	= 40
-RAD_DISCONNECT_ACK	= 41
-RAD_DISCONNECT_NAK	= 42
-RAD_COA_REQUEST		= 43
-RAD_COA_ACK		= 44
-RAD_COA_NAK		= 45
+class DirctionaryChapter(IntEnum):
+    # allow unknown attributes as pure integers
+    def _missing_(value):
+        return value
 
-# Attribute types and values
-RAD_USER_NAME		= 1 # String
-RAD_USER_PASSWORD	= 2 # String
-RAD_CHAP_PASSWORD	= 3 # String
-RAD_NAS_IP_ADDRESS	= 4 # IP address
-RAD_NAS_PORT		= 5 # Integer
+@unique
+class MessageTypes(DirctionaryChapter):
+    ACCESS_REQUEST	= 1
+    ACCESS_ACCEPT	= 2
+    ACCESS_REJECT	= 3
+    ACCOUNTING_REQUEST	= 4
+    ACCOUNTING_RESPONSE	= 5
+    ACCESS_CHALLENGE	= 11
+    DISCONNECT_REQUEST	= 40
+    DISCONNECT_ACK	= 41
+    DISCONNECT_NAK	= 42
+    COA_REQUEST		= 43
+    COA_ACK		= 44
+    COA_NAK		= 45
 
-RAD_SERVICE_TYPE	= 6 # Integer
-RAD_LOGIN		= 1
-RAD_FRAMED		= 2
-RAD_CALLBACK_LOGIN	= 3
-RAD_CALLBACK_FRAMED	= 4
-RAD_OUTBOUND		= 5
-RAD_ADMINISTRATIVE	= 6
-RAD_NAS_PROMPT		= 7
-RAD_AUTHENTICATE_ONLY	= 8
-RAD_CALLBACK_NAS_PROMPT	= 9
-
-RAD_FRAMED_PROTOCOL	= 7 # Integer
-RAD_PPP			= 1
-RAD_SLIP		= 2
-RAD_ARAP		= 3 # Appletalk
-RAD_GANDALF		= 4
-RAD_XYLOGICS		= 5
-
-RAD_FRAMED_IP_ADDRESS	= 8 # IP address
-RAD_FRAMED_IP_NETMASK	= 9 # IP address
-RAD_FRAMED_ROUTING	= 10 # Integer
-RAD_FILTER_ID		= 11 # String
-RAD_FRAMED_MTU		= 12 # Integer
-
-RAD_FRAMED_COMPRESSION	= 13 # Integer
-RAD_COMP_NONE		= 0
-RAD_COMP_VJ		= 1
-RAD_COMP_IPXHDR		= 2
-
-RAD_LOGIN_IP_HOST	= 14 # IP address
-RAD_LOGIN_SERVICE	= 15 # Integer
-RAD_LOGIN_TCP_PORT	= 16 # Integer
-# unassiged #17
-RAD_REPLY_MESSAGE	= 18 # String
-RAD_CALLBACK_NUMBER	= 19 # String
-RAD_CALLBACK_ID		= 20 # String
-# unassiged #21
-RAD_FRAMED_ROUTE	= 22 # String
-RAD_FRAMED_IPX_NETWORK	= 23 # IP address
-RAD_STATE		= 24 # String
-RAD_CLASS		= 25 # Integer
-RAD_VENDOR_SPECIFIC	= 26 # Integer
-RAD_SESSION_TIMEOUT	= 27 # Integer
-RAD_IDLE_TIMEOUT	= 28 # Integer
-RAD_TERMINATION_ACTION	= 29 # Integer
-RAD_CALLED_STATION_ID	= 30 # String
-RAD_CALLING_STATION_ID	= 31 # String
-RAD_NAS_IDENTIFIER	= 32 # String
-RAD_PROXY_STATE	= 33 # Integer
-RAD_LOGIN_LAT_SERVICE	= 34 # Integer
-RAD_LOGIN_LAT_NODE	= 35 # Integer
-RAD_LOGIN_LAT_GROUP	= 36 # Integer
-RAD_FRAMED_APPLETALK_LINK= 37 # Integer
-RAD_FRAMED_APPLETALK_NETWORK= 38 # Integer
-RAD_FRAMED_APPLETALK_ZONE= 39 # Integer
-# reserved for accounting #40-59
-RAD_ACCT_INPUT_GIGAWORDS= 52
-RAD_ACCT_OUTPUT_GIGAWORDS= 53
-
-RAD_CHAP_CHALLENGE	= 60 # String
-
-RAD_NAS_PORT_TYPE	= 61 # Integer
-RAD_ASYNC		= 0
-RAD_SYNC		= 1
-RAD_ISDN_SYNC		= 2
-RAD_ISDN_ASYNC_V120	= 3
-RAD_ISDN_ASYNC_V110	= 4
-RAD_VIRTUAL		= 5
-RAD_PIAFS		= 6
-RAD_HDLC_CLEAR_CHANNEL	= 7
-RAD_X_25		= 8
-RAD_X_75		= 9
-RAD_G_3_FAX		= 10
-RAD_SDSL		= 11
-RAD_ADSL_CAP		= 12
-RAD_ADSL_DMT		= 13
-RAD_IDSL		= 14
-RAD_ETHERNET		= 15
-RAD_XDSL		= 16
-RAD_CABLE		= 17
-RAD_WIRELESS_OTHER	= 18
-RAD_WIRELESS_IEEE_802_11= 19
-
-RAD_PORT_LIMIT		= 62 # Integer
-RAD_LOGIN_LAT_PORT	= 63 # Integer
-RAD_CONNECT_INFO	= 77 # String
-RAD_EAP_MESSAGE		= 79 # Octets
-RAD_MESSAGE_AUTHENTIC	= 80 # Octets
-RAD_ACCT_INTERIM_INTERVAL= 85 # Integer
-RAD_NAS_IPV6_ADDRESS	= 95 # IPv6 address
-RAD_FRAMED_INTERFACE_ID	= 96 # 8 octets
-RAD_FRAMED_IPV6_PREFIX	= 97 # Octets
-RAD_LOGIN_IPV6_HOST	= 98 # IPv6 address
-RAD_FRAMED_IPV6_ROUTE	= 99 # String
-RAD_FRAMED_IPV6_POOL	= 100 # String
+@unique
+class Attributes(DirctionaryChapter):
+    USER_NAME		= 1 # String
+    USER_PASSWORD	= 2 # String
+    CHAP_PASSWORD	= 3 # String
+    NAS_IP_ADDRESS	= 4 # IP address
+    NAS_PORT		= 5 # Integer
+    SERVICE_TYPE	= 6 # Integer
+    FRAMED_PROTOCOL	= 7 # Integer
+    FRAMED_IP_ADDRESS	= 8 # IP address
+    FRAMED_IP_NETMASK	= 9 # IP address
+    FRAMED_ROUTING	= 10 # Integer
+    FILTER_ID		= 11 # String
+    FRAMED_MTU		= 12 # Integer
+    FRAMED_COMPRESSION	= 13 # Integer
+    LOGIN_IP_HOST	= 14 # IP address
+    LOGIN_SERVICE	= 15 # Integer
+    LOGIN_TCP_PORT	= 16 # Integer
+    # unassiged #17
+    REPLY_MESSAGE	= 18 # String
+    CALLBACK_NUMBER	= 19 # String
+    CALLBACK_ID		= 20 # String
+    # unassiged #21
+    FRAMED_ROUTE	= 22 # String
+    FRAMED_IPX_NETWORK	= 23 # IP address
+    STATE		= 24 # String
+    CLASS		= 25 # Integer
+    VENDOR_SPECIFIC	= 26 # Integer
+    SESSION_TIMEOUT	= 27 # Integer
+    IDLE_TIMEOUT	= 28 # Integer
+    TERMINATION_ACTION	= 29 # Integer
+    CALLED_STATION_ID	= 30 # String
+    CALLING_STATION_ID	= 31 # String
+    NAS_IDENTIFIER	= 32 # String
+    PROXY_STATE		= 33 # Integer
+    LOGIN_LAT_SERVICE	= 34 # Integer
+    LOGIN_LAT_NODE	= 35 # Integer
+    LOGIN_LAT_GROUP	= 36 # Integer
+    FRAMED_APPLETALK_LINK= 37 # Integer
+    FRAMED_APPLETALK_NETWORK= 38 # Integer
+    FRAMED_APPLETALK_ZONE= 39 # Integer
+    # reserved for accounting #40-59 (see below)
+    ACCT_INPUT_GIGAWORDS= 52
+    ACCT_OUTPUT_GIGAWORDS= 53
+    CHAP_CHALLENGE	= 60 # String
+    NAS_PORT_TYPE	= 61 # Integer
+    PORT_LIMIT		= 62 # Integer
+    LOGIN_LAT_PORT	= 63 # Integer
+    CONNECT_INFO	= 77 # String
+    EAP_MESSAGE		= 79 # Octets
+    MESSAGE_AUTHENTIC	= 80 # Octets
+    ACCT_INTERIM_INTERVAL= 85 # Integer
+    NAS_IPV6_ADDRESS	= 95 # IPv6 address
+    FRAMED_INTERFACE_ID	= 96 # 8 octets
+    FRAMED_IPV6_PREFIX	= 97 # Octets
+    LOGIN_IPV6_HOST	= 98 # IPv6 address
+    FRAMED_IPV6_ROUTE	= 99 # String
+    FRAMED_IPV6_POOL	= 100 # String
 
 # Accounting attribute types and values
-RAD_ACCT_STATUS_TYPE	= 40 # Integer
-RAD_START		= 1
-RAD_STOP		= 2
-RAD_UPDATE		= 3
-RAD_ACCOUNTING_ON	= 7
-RAD_ACCOUNTING_OFF	= 8
+    STATUS_TYPE		= 40 # Integer
+    DELAY_TIME		= 41 # Integer
+    INPUT_OCTETS	= 42 # Integer
+    OUTPUT_OCTETS	= 43 # Integer
+    SESSION_ID		= 44 # String
+    AUTHENTIC		= 45 # Integer
+    SESSION_TIME	= 46 # Integer
+    INPUT_PACKETS	= 47 # Integer
+    OUTPUT_PACKETS	= 48 # Integer
+    TERMINATE_CAUSE	= 49 # Integer
+    MULTI_SESSION_ID	= 50 # String
+    LINK_COUNT		= 51 # Integer
 
-RAD_ACCT_DELAY_TIME	= 41 # Integer
-RAD_ACCT_INPUT_OCTETS	= 42 # Integer
-RAD_ACCT_OUTPUT_OCTETS	= 43 # Integer
-RAD_ACCT_SESSION_ID	= 44 # String
+    ERROR_CAUSE		= 101 # Integer
 
-RAD_ACCT_AUTHENTIC	= 45 # Integer
-RAD_AUTH_RADIUS		= 1
-RAD_AUTH_LOCAL		= 2
-RAD_AUTH_REMOTE		= 3
+@unique
+class FramedProtocol(DirctionaryChapter):
+    PPP			= 1
+    SLIP		= 2
+    ARAP		= 3 # Appletalk
+    GANDALF		= 4
+    XYLOGICS		= 5
 
-RAD_ACCT_SESSION_TIME	= 46 # Integer
-RAD_ACCT_INPUT_PACKETS	= 47 # Integer
-RAD_ACCT_OUTPUT_PACKETS	= 48 # Integer
+@unique
+class ServiceType(DirctionaryChapter):
+    LOGIN		= 1
+    FRAMED		= 2
+    CALLBACK_LOGIN	= 3
+    CALLBACK_FRAMED	= 4
+    OUTBOUND		= 5
+    ADMINISTRATIVE	= 6
+    NAS_PROMPT		= 7
+    AUTHENTICATE_ONLY	= 8
+    CALLBACK_NAS_PROMPT	= 9
 
-RAD_ACCT_TERMINATE_CAUSE= 49 # Integer
-RAD_TERM_USER_REQUEST	= 1
-RAD_TERM_LOST_CARRIER	= 2
-RAD_TERM_LOST_SERVICE	= 3
-RAD_TERM_IDLE_TIMEOUT	= 4
-RAD_TERM_SESSION_TIMEOUT= 5
-RAD_TERM_ADMIN_RESET	= 6
-RAD_TERM_ADMIN_REBOOT	= 7
-RAD_TERM_PORT_ERROR	= 8
-RAD_TERM_NAS_ERROR	= 9
-RAD_TERM_NAS_REQUEST	= 10
-RAD_TERM_NAS_REBOOT	= 11
-RAD_TERM_PORT_UNNEEDED	= 12
-RAD_TERM_PORT_PREEMPTED	= 13
-RAD_TERM_PORT_SUSPENDED	= 14
-RAD_TERM_SERVICE_UNAVAILABLE= 15
-RAD_TERM_CALLBACK	= 16
-RAD_TERM_USER_ERROR	= 17
-RAD_TERM_HOST_REQUEST	= 18
+@unique
+class FramedCompression(DirctionaryChapter):
+    COMP_NONE		= 0
+    COMP_VJ		= 1
+    COMP_IPXHDR		= 2
 
-RAD_ACCT_MULTI_SESSION_ID= 50 # String
-RAD_ACCT_LINK_COUNT	= 51 # Integer
+@unique
+class NASPortType(DirctionaryChapter):
+    ASYNC		= 0
+    SYNC		= 1
+    ISDN_SYNC		= 2
+    ISDN_ASYNC_V120	= 3
+    ISDN_ASYNC_V110	= 4
+    VIRTUAL		= 5
+    PIAFS		= 6
+    HDLC_CLEAR_CHANNEL	= 7
+    X_25		= 8
+    X_75		= 9
+    G_3_FAX		= 10
+    SDSL		= 11
+    ADSL_CAP		= 12
+    ADSL_DMT		= 13
+    IDSL		= 14
+    ETHERNET		= 15
+    XDSL		= 16
+    CABLE		= 17
+    WIRELESS_OTHER	= 18
+    WIRELESS_IEEE_802_11= 19
 
-RAD_ERROR_CAUSE		= 101 # Integer
+@unique
+class AcctAuthentic(DirctionaryChapter):
+    RADIUS		= 1
+    LOCAL		= 2
+    REMOTE		= 3
+
+@unique
+class AcctTerminateCause(DirctionaryChapter):
+    USER_REQUEST	= 1
+    LOST_CARRIER	= 2
+    LOST_SERVICE	= 3
+    IDLE_TIMEOUT	= 4
+    SESSION_TIMEOUT	= 5
+    ADMIN_RESET		= 6
+    ADMIN_REBOOT	= 7
+    PORT_ERROR		= 8
+    NAS_ERROR		= 9
+    NAS_REQUEST		= 10
+    NAS_REBOOT		= 11
+    PORT_UNNEEDED	= 12
+    PORT_PREEMPTED	= 13
+    PORT_SUSPENDED	= 14
+    SERVICE_UNAVAILABLE	= 15
+    CALLBACK		= 16
+    USER_ERROR		= 17
+    HOST_REQUEST	= 18
+
+@unique
+class AcctStatueType(DirctionaryChapter):
+    START		= 1
+    STOP		= 2
+    UPDATE		= 3
+    ACCOUNTING_ON	= 7
+    ACCOUNTING_OFF	= 8
+
 
 radlib = CDLL(util.find_library("radius"))
 libc = CDLL(util.find_library("c"))
@@ -261,9 +278,9 @@ def rad_get_attr(handle):
         raise Exception("Malformed attribute found in dataset %s" % rad_stderror(handle))
     if retval == 0:
         return None
-    if retval == RAD_VENDOR_SPECIFIC:
+    if retval == int(Attributes.VENDOR_SPECIFIC):
         return rad_get_vendor_attr(string_at(pvalue, len.value), len.value)
-    return RadiusAttribute(retval, string_at(pvalue, len.value), len.value, None)
+    return RadiusAttribute(Attributes(retval), string_at(pvalue, len.value), len.value, None)
 
 def rad_get_attrs(handle):
     attrs = []
