@@ -275,7 +275,7 @@ def rad_get_attr(handle):
     len = c_size_t()
     retval = radlib.rad_get_attr(handle, cast(byref(pvalue), POINTER(c_void_p)), byref(len))
     if retval == -1:
-        raise Exception("Malformed attribute found in dataset %s" % rad_stderror(handle))
+        raise Exception("Malformed attribute found in dataset %s" % rad_strerror(handle))
     if retval == 0:
         return None
     if retval == int(Attributes.VENDOR_SPECIFIC):
